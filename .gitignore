@@ -1,6 +1,6 @@
 .devcontainer
 .vscode
-docs
+docs/JC3248W535EN
 /.pio
 /build
 *.zip
