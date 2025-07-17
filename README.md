@@ -21,7 +21,7 @@ Este proyecto está pensado para quienes tienen la placa JC3248W535EN y desean c
 1. **Clona este repositorio:**
 
    ```sh
-   git clone https://github.com/tuusuario/JC3248W535EN.git
+   git clone https://github.com/tomasschus/JC3248W535EN.git
    cd JC3248W535EN
    ```
 
@@ -55,7 +55,7 @@ This repository provides a clean, working PlatformIO build for the JC3248W535EN 
 1. **Clone this repo:**
 
    ```sh
-   git clone https://github.com/youruser/JC3248W535EN.git
+   git clone https://github.com/tomasschus/JC3248W535EN.git
    cd JC3248W535EN
    ```
 
