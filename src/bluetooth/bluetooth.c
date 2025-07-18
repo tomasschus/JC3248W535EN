@@ -8,13 +8,15 @@
 #include "../ui/ui.h"
 
 static const char *TAG = "BLE_NIMBLE";
+static const char *BLE_TAG = "Drivy-5xg7";
 
-// UUIDs personalizados
 #define BLE_SERVICE_UUID 0x181C
 #define BLE_CHAR_UUID_RX 0x2A56
 
-// Prototipo de función para actualizar la UI
-extern void ui_show_ble_message(const char *msg);
+extern void ui_show_ble_json(const char *json);
+
+static char ble_rx_buffer[512];
+static int ble_rx_buffer_len = 0;
 
 // Callback de acceso a la característica RX
 static int ble_rx_access_cb(uint16_t conn_handle, uint16_t attr_handle,
@@ -22,19 +24,30 @@ static int ble_rx_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 {
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR)
     {
-        // Copia el dato recibido y lo muestra en la UI
-        char buf[64] = {0};
-        int len = ctxt->om->om_len > 63 ? 63 : ctxt->om->om_len;
-        memcpy(buf, ctxt->om->om_data, len);
-        buf[len] = '\0';
-        ESP_LOGI(TAG, "Recibido por BLE: %s", buf);
-        ui_show_ble_message(buf); // Actualiza la pantalla
+        int len = ctxt->om->om_len;
+        if (ble_rx_buffer_len + len < sizeof(ble_rx_buffer) - 1)
+        {
+            memcpy(ble_rx_buffer + ble_rx_buffer_len, ctxt->om->om_data, len);
+            ble_rx_buffer_len += len;
+            ble_rx_buffer[ble_rx_buffer_len] = '\0';
+            ESP_LOGI(TAG, "Recibido por BLE: %s", ble_rx_buffer);
+
+            // Procesa solo si detectas el cierre de JSON
+            if (strchr(ble_rx_buffer, '}'))
+            {
+                ui_show_ble_json(ble_rx_buffer);
+                ble_rx_buffer_len = 0; // Limpia el buffer para el siguiente mensaje
+            }
+        }
+        else
+        {
+            ble_rx_buffer_len = 0;
+        }
         return 0;
     }
-    return BLE_ATT_ERR_UNLIKELY;
+    return 0; // En vez de BLE_ATT_ERR_UNLIKELY
 }
 
-// Definición del servicio y característica
 static const struct ble_gatt_svc_def gatt_svcs[] = {
     {
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
@@ -45,15 +58,14 @@ static const struct ble_gatt_svc_def gatt_svcs[] = {
                 .access_cb = ble_rx_access_cb,
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP,
             },
-            {0}, // Fin de características
+            {0},
         },
     },
-    {0}, // Fin de servicios
+    {0},
 };
 
-void ble_app_on_sync(void); // <-- PROTOTIPO AQUÍ
+void ble_app_on_sync(void);
 
-// Callback de eventos GAP
 static int ble_gap_event_cb(struct ble_gap_event *event, void *arg)
 {
     switch (event->type)
@@ -62,17 +74,18 @@ static int ble_gap_event_cb(struct ble_gap_event *event, void *arg)
         if (event->connect.status == 0)
         {
             ESP_LOGI(TAG, "Dispositivo conectado, deteniendo advertising");
-            // No reiniciamos advertising aquí, solo permitimos una conexión
+            activate_bluetooth_icon();
         }
         else
         {
             ESP_LOGI(TAG, "Fallo al conectar, reiniciando advertising");
-            ble_app_on_sync(); // Reinicia advertising si la conexión falló
+            ble_app_on_sync();
         }
         break;
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "Dispositivo desconectado, reiniciando advertising");
-        ble_app_on_sync(); // Reinicia advertising al desconectar
+        ble_app_on_sync();
+        desactivate_bluetooth_icon();
         break;
     default:
         break;
@@ -80,7 +93,6 @@ static int ble_gap_event_cb(struct ble_gap_event *event, void *arg)
     return 0;
 }
 
-// Tarea del host BLE
 static void ble_host_task(void *param)
 {
     nimble_port_run();
@@ -91,22 +103,19 @@ void ble_app_on_sync(void)
 {
     ESP_LOGI(TAG, "BLE stack sincronizado");
 
-    // Inicializa servicios estándar GAP y GATT
     ble_svc_gap_init();
     ble_svc_gatt_init();
 
-    ble_svc_gap_device_name_set("MiESP32-BLE");
+    ble_svc_gap_device_name_set(BLE_TAG);
 
-    // Registra el servicio GATT personalizado
     ble_gatts_count_cfg(gatt_svcs);
     ble_gatts_add_svcs(gatt_svcs);
 
     ble_gatts_start();
 
-    // Advertising con nombre
     struct ble_hs_adv_fields fields = {0};
-    fields.name = (uint8_t *)"MiESP32-BLE";
-    fields.name_len = strlen("MiESP32-BLE");
+    fields.name = (uint8_t *)BLE_TAG;
+    fields.name_len = strlen(BLE_TAG);
     fields.name_is_complete = 1;
     ble_gap_adv_set_fields(&fields);
 
@@ -114,7 +123,6 @@ void ble_app_on_sync(void)
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 
-    // Usa el callback de eventos GAP para controlar conexiones
     ble_gap_adv_start(0, NULL, BLE_HS_FOREVER, &adv_params, ble_gap_event_cb, NULL);
     ESP_LOGI(TAG, "BLE advertising iniciado");
 }

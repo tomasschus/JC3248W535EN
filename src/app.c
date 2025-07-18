@@ -4,9 +4,8 @@
 #include "esp_bsp.h"
 #include "lv_port.h"
 #include "ui/ui.h"
-#include "wifi/wifi_manager.h"
-#include "webserver/webserver.h"
 #include "bluetooth/bluetooth.h"
+#include "re_logo/re_logo.h"
 
 void app_main()
 {
@@ -21,7 +20,7 @@ void app_main()
   bsp_display_backlight_on();
 
   ui_init();
-  wifi_manager_init();
-  webserver_start();
+  // wifi_manager_init();
+  // webserver_start();
   bluetooth_init();
 }

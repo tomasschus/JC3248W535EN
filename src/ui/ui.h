@@ -4,6 +4,8 @@
 #include <lvgl.h>
 
 void ui_init(void);
-void ui_update_display(const char *turn, int distance, const char *time_str);
+void ui_show_ble_json(const char *json);
+void activate_bluetooth_icon(void);
+void desactivate_bluetooth_icon(void);
 
 #endif // UI_H
