@@ -2,13 +2,13 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
-#include "host/ble_gap.h"  // ← FALTABA
+#include "host/ble_gap.h"
 #include "esp_log.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "../ui/ui.h"
 #include <inttypes.h>
-#include <string.h>  // ← Para memset
+#include <string.h>
 
 static const char *TAG = "BLE_NIMBLE";
 static const char *BLE_TAG = "Drivy-5xg7";

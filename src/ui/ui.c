@@ -16,6 +16,7 @@ static lv_obj_t *label_turn = NULL;
 static lv_obj_t *label_distance = NULL;
 static lv_obj_t *label_time = NULL;
 static lv_obj_t *label_speed = NULL;
+static lv_obj_t *label_distance_turn = NULL;
 
 void principal_ui(void)
 {
@@ -43,7 +44,14 @@ void principal_ui(void)
     lv_label_set_text(label_turn, "");
     lv_obj_set_style_text_color(label_turn, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_turn, &lv_font_montserrat_16, 0);
-    lv_obj_align(label_turn, LV_ALIGN_CENTER, 0, 50);
+    lv_obj_align(label_turn, LV_ALIGN_CENTER, 0, 20);
+
+    // Label distancia para giro
+    label_distance_turn = lv_label_create(lv_scr_act());
+    lv_label_set_text(label_distance_turn, "");
+    lv_obj_set_style_text_color(label_distance_turn, lv_color_white(), 0);
+    lv_obj_set_style_text_font(label_distance_turn, &lv_font_montserrat_16, 0);
+    lv_obj_align(label_distance_turn, LV_ALIGN_CENTER, 0, 50);
 
     // Label para distancia
     label_distance = lv_label_create(lv_scr_act());
@@ -98,7 +106,7 @@ void show_arrow(const char *direction)
     }
 
     if (arrow_turn)
-        lv_obj_align(arrow_turn, LV_ALIGN_CENTER, 0, -40);
+        lv_obj_align(arrow_turn, LV_ALIGN_CENTER, 0, -60);
 }
 
 void activate_bluetooth_icon(void)
@@ -158,6 +166,12 @@ void ui_show_ble_json(const char *json)
     if (status && cJSON_IsString(status) && status->valuestring)
     {
         lv_label_set_text(label_turn, status->valuestring);
+    }
+
+    const cJSON *distance_turn = cJSON_GetObjectItemCaseSensitive(root, "distance_turn");
+    if (distance_turn && cJSON_IsString(distance_turn) && distance_turn->valuestring)
+    {
+        lv_label_set_text(label_distance_turn, distance_turn->valuestring);
     }
 
     const cJSON *hour_val = cJSON_GetObjectItemCaseSensitive(root, "hour");
