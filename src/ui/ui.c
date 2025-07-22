@@ -9,6 +9,13 @@
 #include <cJSON.h>
 #include "esp_log.h"
 
+// 1. Variables globales de estilos y modo
+static lv_style_t style_dark;
+static lv_style_t style_light;
+
+static lv_obj_t *btn_mode;
+static bool dark_mode = false;
+
 static lv_obj_t *icon_bt = NULL;
 static lv_obj_t *label_hour = NULL;
 static lv_obj_t *arrow_turn = NULL;
@@ -18,20 +25,50 @@ static lv_obj_t *label_time = NULL;
 static lv_obj_t *label_speed = NULL;
 static lv_obj_t *label_distance_turn = NULL;
 
+static void btn_mode_event_cb(lv_event_t *e)
+{
+    dark_mode = !dark_mode;
+
+    lv_obj_remove_style_all(lv_scr_act());
+    lv_obj_add_style(lv_scr_act(), dark_mode ? &style_dark : &style_light, 0);
+
+    lv_obj_add_style(label_hour, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(icon_bt, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(label_turn, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(label_distance_turn, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(label_distance, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(label_time, dark_mode ? &style_dark : &style_light, 0);
+    lv_obj_add_style(label_speed, dark_mode ? &style_dark : &style_light, 0);
+
+    if (arrow_turn)
+    {
+        lv_obj_set_style_line_color(arrow_turn, dark_mode ? lv_color_white() : lv_color_black(), 0);
+    }
+
+    lv_obj_invalidate(lv_scr_act());
+}
+
 void principal_ui(void)
 {
     bsp_display_lock(0);
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
 
     label_hour = lv_label_create(lv_scr_act());
     lv_label_set_text(label_hour, "HH:MM");
-    lv_obj_set_style_text_color(label_hour, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_hour, &lv_font_montserrat_18, 0);
     lv_obj_align(label_hour, LV_ALIGN_TOP_RIGHT, -5, 5);
 
+    btn_mode = lv_btn_create(lv_scr_act());
+    lv_obj_align(btn_mode, LV_ALIGN_TOP_RIGHT, -80, 5);
+    lv_obj_t *label_btn = lv_label_create(btn_mode);
+    lv_label_set_text(label_btn, dark_mode ? "🌙" : "☀️");
+    lv_obj_add_event_cb(btn_mode, btn_mode_event_cb, LV_EVENT_CLICKED, NULL);
+
+    // icon_mode = lv_btn_create(lv_scr_act());
+    // lv_label_set_text(icon_mode, dark_mode ? "🌙" : "☀️");
+    // lv_obj_align(icon_mode, LV_ALIGN_TOP_RIGHT, -90, 5);
+
     icon_bt = lv_label_create(lv_scr_act());
     lv_label_set_text(icon_bt, LV_SYMBOL_BLUETOOTH);
-    lv_obj_set_style_text_color(icon_bt, lv_color_hex(0x808080), 0);
     lv_obj_set_style_text_font(icon_bt, &lv_font_montserrat_22, 0);
     lv_obj_align(icon_bt, LV_ALIGN_TOP_LEFT, 10, 10);
 
@@ -42,35 +79,30 @@ void principal_ui(void)
     // Label para giro (turn)
     label_turn = lv_label_create(lv_scr_act());
     lv_label_set_text(label_turn, "");
-    lv_obj_set_style_text_color(label_turn, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_turn, &lv_font_montserrat_16, 0);
     lv_obj_align(label_turn, LV_ALIGN_CENTER, 0, 20);
 
     // Label distancia para giro
     label_distance_turn = lv_label_create(lv_scr_act());
     lv_label_set_text(label_distance_turn, "");
-    lv_obj_set_style_text_color(label_distance_turn, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_distance_turn, &lv_font_montserrat_16, 0);
     lv_obj_align(label_distance_turn, LV_ALIGN_CENTER, 0, 50);
 
     // Label para distancia
     label_distance = lv_label_create(lv_scr_act());
     lv_label_set_text(label_distance, "Dist: -- m");
-    lv_obj_set_style_text_color(label_distance, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_distance, &lv_font_montserrat_18, 0);
     lv_obj_align(label_distance, LV_ALIGN_BOTTOM_LEFT, 10, -10);
 
     // Label para tiempo
     label_time = lv_label_create(lv_scr_act());
     lv_label_set_text(label_time, "Llegada a las --:--");
-    lv_obj_set_style_text_color(label_time, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_time, &lv_font_montserrat_18, 0);
     lv_obj_align(label_time, LV_ALIGN_BOTTOM_LEFT, 10, -40);
 
     // Label para velocidad
     label_speed = lv_label_create(lv_scr_act());
     lv_label_set_text(label_speed, "Vel: -- km/h");
-    lv_obj_set_style_text_color(label_speed, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_speed, &lv_font_montserrat_18, 0);
     lv_obj_align(label_speed, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
 
@@ -88,21 +120,23 @@ void show_arrow(const char *direction)
     if (direction == NULL)
         return;
 
+    lv_color_t arrow_color = dark_mode ? lv_color_white() : lv_color_black();
+
     if (strcmp(direction, "up") == 0)
     {
-        arrow_turn = arrow_up(lv_scr_act());
+        arrow_turn = arrow_up(lv_scr_act(), arrow_color);
     }
     else if (strcmp(direction, "down") == 0)
     {
-        arrow_turn = arrow_down(lv_scr_act());
+        arrow_turn = arrow_down(lv_scr_act(), arrow_color);
     }
     else if (strcmp(direction, "left") == 0)
     {
-        arrow_turn = arrow_left(lv_scr_act());
+        arrow_turn = arrow_left(lv_scr_act(), arrow_color);
     }
     else if (strcmp(direction, "right") == 0)
     {
-        arrow_turn = arrow_right(lv_scr_act());
+        arrow_turn = arrow_right(lv_scr_act(), arrow_color);
     }
 
     if (arrow_turn)
@@ -123,10 +157,22 @@ void desactivate_bluetooth_icon(void)
 
 void ui_init(void)
 {
+    lv_style_init(&style_dark);
+
+    lv_style_set_bg_color(&style_dark, lv_color_black());
+    lv_style_set_text_color(&style_dark, lv_color_white());
+    lv_style_set_bg_opa(&style_dark, LV_OPA_COVER);
+
+    lv_style_init(&style_light);
+    lv_style_set_bg_color(&style_light, lv_color_white());
+    lv_style_set_text_color(&style_light, lv_color_black());
+    lv_style_set_bg_opa(&style_light, LV_OPA_COVER);
+
     splash_screen_royal_enfield();
     vTaskDelay(pdMS_TO_TICKS(2000));
     lv_obj_clean(lv_scr_act());
     principal_ui();
+    btn_mode_event_cb(NULL);
 }
 
 static void clean_json(char *json)

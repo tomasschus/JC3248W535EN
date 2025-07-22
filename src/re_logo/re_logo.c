@@ -50,12 +50,5 @@ void splash_screen_royal_enfield(void)
     lv_obj_set_style_border_width(line_bottom, 0, 0);
     lv_obj_align_to(line_bottom, label_brand, LV_ALIGN_OUT_BOTTOM_MID, 0, 20); // Alineado debajo del texto
 
-    // 6. Texto de "Cargando..."
-    // lv_obj_t *label_loading = lv_label_create(scr);
-    // lv_label_set_text(label_loading, "Cargando...");
-    // lv_obj_set_style_text_color(label_loading, RE_OFF_WHITE, 0); // Color más sutil
-    // lv_obj_set_style_text_font(label_loading, &lv_font_montserrat_18, 0);
-    // lv_obj_align(label_loading, LV_ALIGN_BOTTOM_MID, 0, -20); // En la parte inferior de la pantalla
-
     bsp_display_unlock();
 }

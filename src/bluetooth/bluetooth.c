@@ -38,8 +38,7 @@ static int ble_rx_access_cb(uint16_t conn_handle, uint16_t attr_handle,
             memcpy(ble_rx_buffer + ble_rx_buffer_len, ctxt->om->om_data, len);
             ble_rx_buffer_len += len;
             ble_rx_buffer[ble_rx_buffer_len] = '\0';
-            ESP_LOGI(TAG, "Recibido por BLE: %s", ble_rx_buffer);
-
+            ESP_LOGI(TAG, "Recibido por BLE: %s", ble_rx_buffer);             
             if (strchr(ble_rx_buffer, '}'))
             {
                 ui_show_ble_json(ble_rx_buffer);
